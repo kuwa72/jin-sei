@@ -36,9 +36,11 @@ class Renderer {
 	// 背景色に基づいて適切な文字色を計算
 	calculateTextColor(bgR, bgG, bgB) {
 		// 背景色の輝度を計算（YIQ形式）
-		const yiq = (bgR * 299 + bgG * 587 + bgB * 114) / 1000;
+		// const yiq = (bgR * 299 + bgG * 587 + bgB * 114) / 1000;
 		// 輝度に基づいて白または黒を返す
-		return yiq >= 128 ? "rgba(0, 0, 0, 0.8)" : "rgba(255, 255, 255, 0.8)";
+		// return yiq >= 128 ? "rgba(0, 0, 0, 0.8)" : "rgba(255, 255, 255, 0.8)";
+		// 色の切り替わり時に目がチカチカするので白固定で
+		return "rgba(255, 255, 255, 0.8)";
 	}
 
 	// 背景の描画（昼夜サイクルを反映）
@@ -389,12 +391,12 @@ class Renderer {
 
 					// グロー効果（ピンク）
 					this.ctx.strokeStyle = "rgba(255, 20, 147, 0.2)";
-					this.ctx.lineWidth = 6;
+					this.ctx.lineWidth = 3;
 					this.ctx.stroke();
 
 					// メインの線（より鮮やかなピンク）
 					this.ctx.strokeStyle = "rgba(255, 20, 147, 0.8)";
-					this.ctx.lineWidth = 2;
+					this.ctx.lineWidth = 0.5;
 					this.ctx.stroke();
 
 					// 点線設定をリセット

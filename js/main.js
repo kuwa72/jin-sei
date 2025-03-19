@@ -15,9 +15,18 @@ function initialize() {
 	const canvas = document.getElementById("simulation-canvas");
 	const container = document.getElementById("simulation-container");
 
-	// キャンバスサイズの設定
-	canvas.width = 800;
-	canvas.height = 600;
+	// キャンバスサイズを画面サイズに合わせる
+	function resizeCanvas() {
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight;
+		if (simulation) {
+			simulation.width = canvas.width;
+			simulation.height = canvas.height;
+		}
+	}
+
+	// 初期サイズ設定
+	resizeCanvas();
 
 	// シミュレーションとレンダラーの初期化
 	simulation = new Simulation(canvas.width, canvas.height);
@@ -25,6 +34,9 @@ function initialize() {
 
 	// シミュレーションの開始
 	simulation.initialize(100); // 初期個体数100
+
+	// ウィンドウリサイズ時のイベントリスナー
+	window.addEventListener("resize", resizeCanvas);
 
 	// イベントリスナーの設定
 	setupEventListeners();
@@ -46,8 +58,11 @@ function setupEventListeners() {
 	// キャンバスのクリックイベント（個体選択）
 	canvas.addEventListener("click", (event) => {
 		const rect = canvas.getBoundingClientRect();
-		const x = event.clientX - rect.left;
-		const y = event.clientY - rect.top;
+		// キャンバスの実際のサイズとスタイル上のサイズの比率を考慮
+		const scaleX = canvas.width / rect.width;
+		const scaleY = canvas.height / rect.height;
+		const x = (event.clientX - rect.left) * scaleX;
+		const y = (event.clientY - rect.top) * scaleY;
 
 		const selectedEntity = renderer.selectEntityAt(x, y);
 		if (!selectedEntity) {
