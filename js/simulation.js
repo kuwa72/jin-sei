@@ -140,9 +140,8 @@ class Simulation {
 			entity.update();
 		}
 
-		// 年齢の更新（より低頻度）
-		// if (Math.floor(this.time / 10) > Math.floor((this.time - actualDelta) / 10)) {
-		// 上記の倍速
+		// 年齢の更新（2単位時間ごと）
+		// より自然な時間の流れのために更新間隔を調整
 		if (Math.floor(this.time / 2) > Math.floor((this.time - actualDelta) / 2)) {
 			for (const entity of this.entities) {
 				if (!entity.isDead) {

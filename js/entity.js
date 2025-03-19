@@ -345,19 +345,22 @@ class Entity {
 		const basePopulation = 150; // 基本的な最大個体数
 		const maxPopulation = 200; // 絶対的な最大個体数
 
+		// シミュレーション速度を取得
+		const speed = this.simulation.speed;
+
 		// 基準確率の計算（シグモイド関数で滑らかに変化）
 		let baseRate;
 		if (population < basePopulation) {
 			// 人口が少ない場合（0.0002-0.002の範囲）
 			const x = (basePopulation - population) / basePopulation;
 			// より緩やかなカーブ（-6）と遅い立ち上がり（0.4）
-			baseRate = 0.0002 + 0.0018 / (1 + Math.exp(-6 * (x - 0.4)));
+			baseRate = (0.0002 + 0.0018 / (1 + Math.exp(-6 * (x - 0.4)))) * speed;
 		} else {
 			// 人口が多い場合（0.0002-0.001の範囲）
 			const x =
 				(population - basePopulation) / (maxPopulation - basePopulation);
 			// より緩やかな減少（6）と遅い抑制（0.6）
-			baseRate = 0.0002 + 0.0008 / (1 + Math.exp(6 * (x - 0.6)));
+			baseRate = (0.0002 + 0.0008 / (1 + Math.exp(6 * (x - 0.6)))) * speed;
 		}
 
 		let reproductionChance = baseRate;
