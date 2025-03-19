@@ -81,9 +81,9 @@ class Entity {
 	calculateColor() {
 		const genderBase =
 			this.gender === 0
-				? { r: 255, g: 150, b: 150 }
-				: // 女性: ピンク系
-					{ r: 150, g: 150, b: 255 }; // 男性: 青系
+				? { r: 255, g: 100, b: 150 }
+				: // 女性: より鮮やかなピンク系
+					{ r: 100, g: 150, b: 255 }; // 男性: より鮮やかな青系
 
 		// 年齢による色の変化
 		let ageFactor = 1.0;

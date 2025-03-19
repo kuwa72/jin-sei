@@ -11,7 +11,7 @@ class Simulation {
 		this.logger = new Logger(); // ライフログ管理の初期化
 		this.time = 0;
 		this.dayNightCycle = 0; // 0-1の範囲（0: 昼、0.5: 夕方、1: 夜）
-		this.dayLength = 1000; // 1日の長さ（シミュレーション時間単位）
+		this.dayLength = 100; // 1日の長さを年齢の更新間隔（2単位時間）に合わせる
 		this.paused = false;
 		this.speed = 1;
 		this.nextEntityId = 0;
@@ -276,6 +276,6 @@ class Simulation {
 
 	// シミュレーションのリセット
 	reset() {
-		this.initialize(30); // 初期個体数30
+		this.initialize(100); // 初期個体数を起動時と同じ100に統一
 	}
 }
