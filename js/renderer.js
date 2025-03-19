@@ -136,26 +136,71 @@ class Renderer {
 
 		// 昼または夕方の場合は雲を描画
 		if (cycle < 0.75) {
-			const cloudCount = 5;
-			const cloudAlpha = cycle < 0.5 ? 0.2 : 0.3;
+			// 3つの異なるレイヤーで雲を描画
+			const layers = [
+				{ count: 3, speed: 0.005, scale: 1.2, alpha: 0.15 }, // 遠景の大きな雲
+				{ count: 5, speed: 0.015, scale: 1.0, alpha: 0.2 }, // 中景の雲
+				{ count: 4, speed: 0.025, scale: 0.8, alpha: 0.25 }, // 近景の小さな雲
+			];
 
-			for (let i = 0; i < cloudCount; i++) {
-				const x =
-					((this.simulation.time * 0.01 + i * 567.89) % (this.width + 200)) -
-					100;
-				const y = (Math.sin(i * 123.45) * 0.3 + 0.3) * this.height;
-				const size = (Math.sin(i * 789.12) * 0.5 + 0.5) * 50 + 30;
+			for (const layer of layers) {
+				const baseAlpha = cycle < 0.5 ? layer.alpha : layer.alpha * 1.5;
 
-				// 雲の形状（複数の円の組み合わせ）
-				for (let j = 0; j < 5; j++) {
-					const offsetX = (j - 2) * size * 0.3;
-					const offsetY = Math.sin(j * 1.5) * size * 0.1;
-					const radius = size * (0.7 + Math.sin(j * 2.5) * 0.3);
+				for (let i = 0; i < layer.count; i++) {
+					const x =
+						((this.simulation.time * layer.speed + i * 567.89) %
+							(this.width + 400)) -
+						200;
+					const y = (Math.sin(i * 123.45) * 0.2 + 0.3) * this.height;
+					const baseSize =
+						(Math.sin(i * 789.12) * 0.3 + 0.7) * 60 * layer.scale;
 
-					this.ctx.beginPath();
-					this.ctx.arc(x + offsetX, y + offsetY, radius, 0, Math.PI * 2);
-					this.ctx.fillStyle = `rgba(255, 255, 255, ${cloudAlpha})`;
-					this.ctx.fill();
+					// 雲の本体を描画
+					const gradient = this.ctx.createRadialGradient(
+						x + baseSize * 0.5,
+						y - baseSize * 0.2,
+						0,
+						x + baseSize * 0.5,
+						y - baseSize * 0.2,
+						baseSize * 2,
+					);
+					gradient.addColorStop(0, `rgba(255, 255, 255, ${baseAlpha})`);
+					gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+					// 雲の形状（より自然な形に）
+					const points = [
+						{ x: 0, y: 0, size: 1.0 },
+						{ x: 0.3, y: -0.2, size: 0.9 },
+						{ x: 0.6, y: -0.1, size: 0.8 },
+						{ x: 0.9, y: -0.3, size: 0.7 },
+						{ x: 1.2, y: -0.1, size: 0.9 },
+						{ x: 1.5, y: -0.2, size: 0.8 },
+						{ x: 1.8, y: 0, size: 0.7 },
+					];
+
+					for (const point of points) {
+						this.ctx.beginPath();
+						const cloudX = x + point.x * baseSize;
+						const cloudY = y + point.y * baseSize;
+						const radius = baseSize * point.size;
+
+						this.ctx.arc(cloudX, cloudY, radius, 0, Math.PI * 2);
+						this.ctx.fillStyle = gradient;
+						this.ctx.fill();
+					}
+
+					// 雲の下部に影のグラデーションを追加
+					const shadowGradient = this.ctx.createLinearGradient(
+						x,
+						y + baseSize * 0.5,
+						x,
+						y - baseSize * 0.5,
+					);
+					shadowGradient.addColorStop(0, `rgba(0, 0, 0, ${baseAlpha * 0.2})`);
+					shadowGradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+
+					this.ctx.fillStyle = shadowGradient;
+					this.ctx.fillRect(x, y, baseSize * 2, baseSize);
 				}
 			}
 		}
@@ -183,7 +228,7 @@ class Renderer {
 			gradient.addColorStop(0, glowColor);
 			gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
 			this.ctx.beginPath();
-			this.ctx.arc(entity.x, entity.y, entity.size * 2, 0, Math.PI * 2);
+			this.ctx.arc(entity.x, entity.y, entity.size * 1.5, 0, Math.PI * 1.5);
 			this.ctx.fillStyle = gradient;
 			this.ctx.fill();
 
@@ -391,7 +436,7 @@ class Renderer {
 
 					// グロー効果（ピンク）
 					this.ctx.strokeStyle = "rgba(255, 20, 147, 0.2)";
-					this.ctx.lineWidth = 3;
+					this.ctx.lineWidth = 2;
 					this.ctx.stroke();
 
 					// メインの線（より鮮やかなピンク）
