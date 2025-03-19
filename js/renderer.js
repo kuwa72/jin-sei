@@ -11,6 +11,9 @@ class Renderer {
 		this.infoPanel = document.getElementById("info-panel");
 		this.statsElement = document.getElementById("stats");
 		this.dayNightElement = document.getElementById("day-night");
+
+		// パーティクル用のマップを初期化（キー: "entityId1_entityId2", 値: パーティクル配列）
+		this.particleMap = new Map();
 	}
 
 	// 描画処理
@@ -265,30 +268,102 @@ class Renderer {
 
 			// 各個体は1回だけ関係線を描画（重複を避ける）
 			if (entity.id < entity.partner.id) {
-				// 結婚関係の線（二重線とゴールドのグロー効果）
-				// グロー効果（ゴールド）
+				// 関係の強さを計算（0-1の範囲）
+				const relationshipDuration =
+					this.simulation.time - entity.partnershipStartTime;
+				const strength = Math.min(relationshipDuration / 10, 1);
+
+				// ベースの線を描画
 				this.ctx.beginPath();
 				this.ctx.moveTo(entity.x, entity.y);
 				this.ctx.lineTo(entity.partner.x, entity.partner.y);
-				this.ctx.strokeStyle = "rgba(255, 215, 0, 0.3)";
-				this.ctx.lineWidth = 8;
+				this.ctx.strokeStyle = `rgba(255, 215, 0, ${0.2 + strength * 0.3})`;
+				this.ctx.lineWidth = 2;
 				this.ctx.stroke();
 
-				// 外側の線（白）
-				this.ctx.beginPath();
-				this.ctx.moveTo(entity.x, entity.y);
-				this.ctx.lineTo(entity.partner.x, entity.partner.y);
-				this.ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
-				this.ctx.lineWidth = 3;
-				this.ctx.stroke();
+				// 関係のキーを生成
+				const relationKey = `${entity.id}_${entity.partner.id}`;
 
-				// 内側の線（ゴールド）
-				this.ctx.beginPath();
-				this.ctx.moveTo(entity.x, entity.y);
-				this.ctx.lineTo(entity.partner.x, entity.partner.y);
-				this.ctx.strokeStyle = "rgba(255, 215, 0, 0.8)";
-				this.ctx.lineWidth = 1.5;
-				this.ctx.stroke();
+				// この関係のパーティクルを取得または初期化
+				if (!this.particleMap.has(relationKey)) {
+					this.particleMap.set(relationKey, []);
+				}
+				const particles = this.particleMap.get(relationKey);
+
+				// パーティクルの生成
+				const particleCount = 5 + Math.floor(strength * 15); // 関係が強いほど多く
+				while (particles.length < particleCount) {
+					particles.push({
+						x: entity.x + (entity.partner.x - entity.x) * Math.random(),
+						y: entity.y + (entity.partner.y - entity.y) * Math.random(),
+						vx: (Math.random() - 0.5) * 2,
+						vy: (Math.random() - 0.5) * 2,
+						life: 1.0,
+						decay: 0.02 + Math.random() * 0.02,
+						size: 1 + strength * 2,
+						alpha: 0.3 + strength * 0.5,
+						hue: 45 + strength * 15, // 黄金色から赤金色へ
+					});
+				}
+
+				// パーティクルの更新と描画
+				for (let i = particles.length - 1; i >= 0; i--) {
+					const p = particles[i];
+
+					// パーティクルの位置を更新
+					p.x += p.vx;
+					p.y += p.vy;
+
+					// 線の方向に引き寄せる力を適用
+					const dx = entity.partner.x - entity.x;
+					const dy = entity.partner.y - entity.y;
+					const len = Math.sqrt(dx * dx + dy * dy);
+					const dirX = dx / len;
+					const dirY = dy / len;
+
+					p.vx += dirX * 0.1;
+					p.vy += dirY * 0.1;
+
+					// 速度を制限
+					const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+					if (speed > 2) {
+						p.vx = (p.vx / speed) * 2;
+						p.vy = (p.vy / speed) * 2;
+					}
+
+					// ライフタイムを減少
+					p.life -= p.decay;
+
+					// パーティクルの描画
+					if (p.life > 0) {
+						const gradient = this.ctx.createRadialGradient(
+							p.x,
+							p.y,
+							0,
+							p.x,
+							p.y,
+							p.size,
+						);
+						gradient.addColorStop(
+							0,
+							`hsla(${p.hue}, 80%, 50%, ${p.alpha * p.life})`,
+						);
+						gradient.addColorStop(1, `hsla(${p.hue}, 80%, 50%, 0)`);
+
+						this.ctx.beginPath();
+						this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+						this.ctx.fillStyle = gradient;
+						this.ctx.fill();
+					} else {
+						// 寿命が尽きたパーティクルを削除
+						particles.splice(i, 1);
+					}
+				}
+
+				// パーティクル数が0になったら関係を削除
+				if (particles.length === 0) {
+					this.particleMap.delete(relationKey);
+				}
 			}
 		}
 
@@ -302,38 +377,28 @@ class Renderer {
 
 				// 各関係は1回だけ描画（重複を避ける）
 				if (entity.id < interest.id) {
-					// 恋愛関係の線（波打つアニメーション効果）
-					const dx = interest.x - entity.x;
-					const dy = interest.y - entity.y;
-					const distance = Math.sqrt(dx * dx + dy * dy);
-					const segments = Math.floor(distance / 10);
-
-					// 波のアニメーション用の時間オフセット
-					const timeOffset = this.simulation.time * 2;
-
+					// 恋愛関係の線（点線アニメーション）
 					this.ctx.beginPath();
-					for (let i = 0; i <= segments; i++) {
-						const t = i / segments;
-						const x = entity.x + dx * t;
-						const y =
-							entity.y + dy * t + Math.sin(t * Math.PI * 2 + timeOffset) * 3;
+					this.ctx.moveTo(entity.x, entity.y);
+					this.ctx.lineTo(interest.x, interest.y);
 
-						if (i === 0) {
-							this.ctx.moveTo(x, y);
-						} else {
-							this.ctx.lineTo(x, y);
-						}
-					}
+					// 点線のパターンを時間とともに移動
+					const dashOffset = -this.simulation.time * 0.1;
+					this.ctx.setLineDash([5, 5]);
+					this.ctx.lineDashOffset = dashOffset;
 
 					// グロー効果（ピンク）
 					this.ctx.strokeStyle = "rgba(255, 20, 147, 0.2)";
-					this.ctx.lineWidth = 4;
+					this.ctx.lineWidth = 6;
 					this.ctx.stroke();
 
 					// メインの線（より鮮やかなピンク）
 					this.ctx.strokeStyle = "rgba(255, 20, 147, 0.8)";
 					this.ctx.lineWidth = 2;
 					this.ctx.stroke();
+
+					// 点線設定をリセット
+					this.ctx.setLineDash([]);
 				}
 			}
 		}

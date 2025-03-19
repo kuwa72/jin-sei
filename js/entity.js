@@ -30,6 +30,7 @@ class Entity {
 		// 関係性
 		this.relationships = []; // 他の個体との関係
 		this.partner = null; // 結婚相手
+		this.partnershipStartTime = 0; // 結婚開始時間
 		this.parents = []; // 親
 		this.children = []; // 子
 		this.romanticInterests = []; // 恋愛対象（ユーザー要望による追加）
@@ -294,13 +295,23 @@ class Entity {
 
 	// 関係の形成
 	formRelationship(other) {
-		// お互いをパートナーとして設定
+		// お互いをパートナーとして設定し、開始時間を記録
 		this.partner = other;
+		this.partnershipStartTime = this.simulation.time;
 		other.partner = this;
+		other.partnershipStartTime = this.simulation.time;
 
 		// 関係リストに追加
-		this.relationships.push({ entity: other, type: "partner" });
-		other.relationships.push({ entity: this, type: "partner" });
+		this.relationships.push({
+			entity: other,
+			type: "partner",
+			startTime: this.simulation.time,
+		});
+		other.relationships.push({
+			entity: this,
+			type: "partner",
+			startTime: this.simulation.time,
+		});
 
 		// 視覚的な更新
 		this.color = this.calculateColor();
